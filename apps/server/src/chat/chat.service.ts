@@ -27,6 +27,29 @@ export class ChatService {
   }
 
   async createMessage(data: { channelId: string; userId: string; content: string; attachments?: { url: string; type?: string }[] }) {
+    // Ensure user exists (demo fallback)
+    await this.prisma.user.upsert({
+      where: { id: data.userId },
+      create: {
+        id: data.userId,
+        email: `${data.userId}@example.com`,
+        username: data.userId,
+      },
+      update: {},
+    });
+
+    // Ensure channel exists (demo fallback)
+    await this.prisma.channel.upsert({
+      where: { id: data.channelId },
+      create: {
+        id: data.channelId,
+        name: data.channelId,
+        createdBy: data.userId,
+        members: { create: { userId: data.userId, role: 'OWNER' } },
+      },
+      update: {},
+    });
+
     const created = await this.prisma.message.create({
       data: {
         channelId: data.channelId,
@@ -69,4 +92,3 @@ export class ChatService {
     }
   }
 }
-
