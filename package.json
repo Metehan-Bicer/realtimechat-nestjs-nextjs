@@ -1,0 +1,15 @@
+{
+  "name": "realtimechat-nestjs-nextjs",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w apps/server & npm run dev -w apps/web",
+    "dev:server": "npm run dev -w apps/server",
+    "dev:web": "npm run dev -w apps/web",
+    "build": "npm run build -w apps/server && npm run build -w apps/web",
+    "prisma:generate": "npm run prisma:generate -w apps/server"
+  }
+}
+

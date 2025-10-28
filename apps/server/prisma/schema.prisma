@@ -1,0 +1,135 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  username  String   @unique
+  avatarUrl String?
+  status    Status   @default(OFFLINE)
+  messages  Message[]
+  channels  ChannelMember[]
+  reactions Reaction[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Channel {
+  id         String          @id @default(cuid())
+  name       String
+  isPrivate  Boolean         @default(false)
+  createdBy  String
+  members    ChannelMember[]
+  messages   Message[]
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+}
+
+model ChannelMember {
+  userId    String
+  channelId String
+  role      ChannelRole @default(MEMBER)
+  joinedAt  DateTime    @default(now())
+
+  user    User    @relation(fields: [userId], references: [id])
+  channel Channel @relation(fields: [channelId], references: [id])
+
+  @@id([userId, channelId])
+}
+
+model Message {
+  id          String      @id @default(cuid())
+  channelId   String?
+  dmChannelId String?
+  userId      String
+  content     String
+  attachments Attachment[]
+  reactions   Reaction[]
+  replyToId   String?
+  replyTo     Message?    @relation("MessageToMessage", fields: [replyToId], references: [id])
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id])
+  channel Channel? @relation(fields: [channelId], references: [id])
+  dm      DMChannel? @relation(fields: [dmChannelId], references: [id])
+}
+
+model Reaction {
+  messageId String
+  userId    String
+  emoji     String
+
+  message Message @relation(fields: [messageId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@id([messageId, userId, emoji])
+}
+
+model Attachment {
+  id        String  @id @default(cuid())
+  messageId String
+  url       String
+  type      String
+  size      Int?
+  mimeType  String?
+  width     Int?
+  height    Int?
+
+  message Message @relation(fields: [messageId], references: [id])
+}
+
+model DMChannel {
+  id        String      @id @default(cuid())
+  members   DMMember[]
+  messages  Message[]
+  createdAt DateTime    @default(now())
+}
+
+model DMMember {
+  userId    String
+  dmId      String
+  joinedAt  DateTime @default(now())
+
+  user User       @relation(fields: [userId], references: [id])
+  dm   DMChannel  @relation(fields: [dmId], references: [id])
+
+  @@id([userId, dmId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      NotificationType
+  payload   Json
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+enum Status {
+  ONLINE
+  OFFLINE
+  IDLE
+  DND
+}
+
+enum ChannelRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum NotificationType {
+  MENTION
+  REPLY
+  REACTION
+}
+
